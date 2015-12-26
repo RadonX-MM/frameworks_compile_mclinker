@@ -66,7 +66,6 @@ ifeq ($(BUILD_ARM_FOR_X86),true)
 endif
 endif
 
-
 # zlib's libnames are different for the host and target.
 # For the target, it is the standard libz
 LOCAL_SHARED_LIBRARIES := $(MCLD_SHARED_LIBRARIES) libz
@@ -92,10 +91,30 @@ LOCAL_C_INCLUDES := $(MCLD_C_INCLUDES)
 LOCAL_SRC_FILES := $(MCLD_SRC_FILES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := $(MCLD_WHOLE_STATIC_LIBRARIES)
-LOCAL_WHOLE_STATIC_LIBRARIES += $(MCLD_ARM_LIBS) \
-                                $(MCLD_AARCH64_LIBS) \
-                                $(MCLD_MIPS_LIBS) \
-                                $(MCLD_X86_LIBS)
+
+# Add target specific code generation libraries
+ifeq ($(TARGET_ARCH), arm)
+  LOCAL_WHOLE_STATIC_LIBRARIES += $(MCLD_ARM_LIBS)
+endif
+
+# Include ARM libs to enable 32-bit linking on AARCH64 targets
+ifeq ($(TARGET_ARCH), arm64)
+  LOCAL_WHOLE_STATIC_LIBRARIES += $(MCLD_AARCH64_LIBS) \
+                                  $(MCLD_ARM_LIBS)
+endif
+
+ifneq (, $(findstring mips,$(TARGET_ARCH)))
+  LOCAL_WHOLE_STATIC_LIBRARIES += $(MCLD_MIPS_LIBS)
+endif
+
+# Add x86 libraries for both x86 and x86_64 targets
+ifneq (, $(findstring x86,$(TARGET_ARCH)))
+  LOCAL_WHOLE_STATIC_LIBRARIES += $(MCLD_X86_LIBS)
+ifeq ($(BUILD_ARM_FOR_X86),true)
+  LOCAL_WHOLE_STATIC_LIBRARIES += $(MCLD_ARM_LIBS) \
+                                  $(MCLD_AARCH64_LIBS)
+endif
+endif
 
 # zlib's libnames are different for the host and target.
 # For the host, it is libz-host
